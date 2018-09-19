@@ -31,6 +31,7 @@ class TextRCNN:
 
         with tf.name_scope("context"):
             shape = [tf.shape(self.output_fw)[0], 1, tf.shape(self.output_fw)[2]]
+            # 去除最后一行，第一行增加0，输出向量后移1个word，即第(i-1)个cell输出和第i个word的向量拼接
             self.c_left = tf.concat([tf.zeros(shape), self.output_fw[:, :-1]], axis=1, name="context_left")
             self.c_right = tf.concat([self.output_bw[:, 1:], tf.zeros(shape)], axis=1, name="context_right")
 
@@ -41,7 +42,7 @@ class TextRCNN:
         with tf.name_scope("text-representation"):
             W2 = tf.Variable(tf.random_uniform([embedding_size, hidden_size], -1.0, 1.0), name="W2")
             b2 = tf.Variable(tf.constant(0.1, shape=[hidden_size]), name="b2")
-            self.y2 = tf.einsum('aij,jk->aik', self.x, W2) + b2
+            self.y2 = tf.tanh(tf.einsum('aij,jk->aik', self.x, W2) + b2)
 
         with tf.name_scope("max-pooling"):
             self.y3 = tf.reduce_max(self.y2, axis=1)
